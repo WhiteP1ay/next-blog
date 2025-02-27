@@ -3,7 +3,6 @@ import {
   Github,
   Facebook,
   Youtube,
-  Linkedin,
   Twitter,
   X,
   Mastodon,
@@ -11,6 +10,7 @@ import {
   Instagram,
   Medium,
   Bluesky,
+  Bilibili,
 } from './icons'
 
 const components = {
@@ -18,7 +18,7 @@ const components = {
   github: Github,
   facebook: Facebook,
   youtube: Youtube,
-  linkedin: Linkedin,
+  bilibili: Bilibili,
   twitter: Twitter,
   x: X,
   mastodon: Mastodon,
@@ -42,7 +42,6 @@ const SocialIcon = ({ kind, href, size = 8 }: SocialIconProps) => {
     return null
 
   const SocialSvg = components[kind]
-
   return (
     <a
       className="text-sm text-gray-500 transition hover:text-gray-600"
