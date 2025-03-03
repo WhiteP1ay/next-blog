@@ -2,13 +2,13 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json yarn.lock ./
 
 RUN corepack enable
-RUN pnpm install
+RUN yarn install
 
 COPY . .
 
-RUN pnpm build
+RUN yarn build
 
-CMD ["pnpm", "serve"]
+CMD ["yarn", "serve"]
