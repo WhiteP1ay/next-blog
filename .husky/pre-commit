@@ -1,1 +1,5 @@
-npx --no-install lint-staged
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# 把 npx 改成 npm run
+npm run lint-staged
