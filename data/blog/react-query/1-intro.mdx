@@ -1,14 +1,11 @@
 ---
-title: react-query 【1】简介与基础使用
-date: '2024-11-08'
+title: 解决fetch的困境 —— react-query 【1】简介与快速入门
 tags: ['react-query', '技术']
 draft: false
-summary: 快速上手 react-query
+summary: 本文介绍我们请求网络数据时面临哪些困境，以及为什么我们需要react-query
 ---
 
-# react-query 简介与基础使用
-
-![玳瑁猫，如果你无法看到这张图片，可能是因为你被墙了](https://raw.githubusercontent.com/WhiteP1ay/docs/master/uPic/cat.jpg)
+![玳瑁猫](https://raw.githubusercontent.com/WhiteP1ay/docs/master/uPic/cat.jpg)
 
 > 一只在奥森拍到的玳瑁猫，颜色像打翻的颜料盘
 
@@ -16,42 +13,17 @@ summary: 快速上手 react-query
 
 嘿，我是老白。
 
-给大家推荐一个异步状态管理工具，名字叫做`@tanstack/query` （曾用名 `react-query`，下文简称 query）。
+在开始前，我想讨论一下标题中说的fetch困境是什么？
 
-它支持 react/vue/angular 等主流前端框架。我自己在生产项目中有深度使用过 react 和 vue 的版本，体验都还不错。
+### 过于简朴的 fetch
 
-异步状态管理工具，简单地说，就是管理基于异步操作而获得状态。通常是管理网络请求返回的数据以及衍生状态。这个后续细说。
-
-先看一下这个库的成绩：
-
-> [github](https://github.com/TanStack/query) 42.7k ⭐️，npm[周下载量](https://www.npmjs.com/package/@tanstack/react-query) 4422006。
-
-这个数据看起来非常夸张，实际上也确实如此，query 在国外是非常主流的技术选择。
-
-> 官方说法是“平均每 6 个 react 项目中就有一个使用了 query。”
-
-但在国内似乎比较冷门，也缺少完善的中文翻译。这也是我想做这个技术分享的原因，想把好的工具介绍给更多的国内开发者。当然选择分享一个冷门的技术也注定这个系列没几个人能看到。
-
-如果你看到了，我很荣幸。
-
-## 我们为什么需要它
-
-### 简朴的 fetch
-
-如果没有这个库，我们在通过 `fetch` 获取数据时，通常是这样的。
+在使用原生的 `fetch api` 获取数据时，大家通常会这么写。
 
 ```tsx
-type Student = {
-  id: number
-  name: string
-  age: number
-  gender: string
-}
-
 // 一个简单的获取学生列表的组件
 const StudentList = () => {
   // 定义状态存储学生数据
-  const [students, setStudents] = useState<Array<Student>>([])
+  const [students, setStudents] = useState([])
 
   // 组件挂载时获取数据
   useEffect(() => {
@@ -76,26 +48,22 @@ const StudentList = () => {
 }
 ```
 
-如果你在 demo 里这么写，没有问题。但在生产环境中一定需要处理 loading 状态和错误处理。
+很简洁，但这种写法只能在demo里使用。
 
-否则一旦 loading 时间过长却没有任何用户反馈、或者请求出错但前端没有响应，对用户体验来说都是致命打击。
+在生产环境中这么写是不能接受的。因为你对这个请求没有做任何处理，它的成功与否被完全的放任自由了。换句话说，这个页面能否正常工作也被放任自由了。
 
-那么，这个代码将变成这样：
+一旦 loading 时间过长却没有任何反馈、或者请求出错了但前端没有任何响应，对用户体验来说都是致命打击。
+
+那让我们优化一下吧！添加loading和错误处理逻辑，这个代码将变成这样：
 
 ```tsx
 // 一个简单的获取学生列表的组件
-type Student = {
-  id: number
-  name: string
-  age: number
-  gender: string
-}
 
 const StudentList = () => {
   // 定义状态存储学生数据和加载状态
-  const [students, setStudents] = useState<Array<Student>>([])
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [error, setError] = useState<Error | null>(null)
+  const [students, setStudents] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   // 组件挂载时获取数据
   useEffect(() => {
@@ -142,37 +110,35 @@ const StudentList = () => {
 }
 ```
 
-有的同学看到这里可能会说，loading 和错误提示可以在`axios`或者类似库的网络请求拦截器中处理。但这种处理通常是统一处理，如果在灵活性要求比较高的场景下、还是会不得不自己控制类似`isLoading`的衍生状态。
+我们只是为了处理一个网络请求的衍生逻辑，但代码已经开始变得复杂化，模板化了。
+
+isLoading，error，这些衍生状态都需要我们手动管理，每个请求都这么写显然很麻烦。
 
 ### 竞态问题
 
-另一个复杂的场景是：由于`fetch` 是异步操作，当多个请求同时发出，由于我们不知道哪一步先完成，所以我们不能保证最终渲染的是否是最后一次请求结果。
+另一个常见但可能被忽视的场景是竞态问题：在发送多个相似的请求时，由于我们不知道哪一个请求先完成，所以我们不能保证最终渲染的是否是最后一次请求结果。
 
 上述有点抽象，我们想象两个场景：
 
-1. 有一个支持翻页的列表组件，如果用户频繁的翻页，从第一页快速的翻到第十页。此时用户期望看到的是第十页的数据，但因为我们不能保证第十页的请求一定早于其他请求返回到前端，所以第十页的请求结果可能被其他页码的请求结果覆盖。
-2. 一个自动完成组件，用户输入一部分内容，组件会在用户输入时访问远程服务器，获取智能补全的列表。但因为用户输入变更很快，最终的智能补全的提示词可能被延期返回的请求结果覆盖。
+1. 有一个支持翻页的表格，如果用户从第一页快速的翻到第十页。此时用户期望看到的是第十页的数据，但我们不能保证第十页的请求一定早于其他页码的请求返回，所以第十页的请求结果可能被其他页码的请求结果覆盖。
+
+2. 一个自动完成组件，用户输入一部分内容，组件会立即访问远程服务器获取智能补全的提示词。但因为用户输入变更很快，最终显示的提示词可能被延期返回的请求结果覆盖。
 
 这就是我们要解决的[“race condition—竞态问题”](https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect)。
 
-一个简单的处理静态问题的思路：通过闭包的`active`来让旧的请求在组件重渲染时不再执行后续逻辑。
+一个简单的处理竞态问题的思路：通过闭包的`active`来让旧的请求在组件重渲染时不再执行后续逻辑。
 
 ```tsx
 useEffect(() => {
   let active = true
 
   const fetchData = async () => {
-    setTimeout(
-      async () => {
-        const response = await fetch(`https://swapi.dev/api/people/${props.id}/`)
-        const newData = await response.json()
-        if (active) {
-          setFetchedId(props.id)
-          setData(newData)
-        }
-      },
-      Math.round(Math.random() * 12000)
-    )
+    const response = await fetch(`https://swapi.dev/api/people/${props.id}/`)
+    const newData = await response.json()
+    if (active) {
+      setFetchedId(props.id)
+      setData(newData)
+    }
   }
 
   fetchData()
@@ -187,34 +153,25 @@ useEffect(() => {
 
 当组件重新渲染或者说页面状态过期的时候 active 变成 false，这个`false`作为网络请求的闭包被缓存到了回调函数中，从而阻止了过期的后续操作。
 
-### 异步状态管理
+### something else
 
-以上只是明显的缺陷，还有一个隐含的不那么容易暴露出来的缺陷：客户端状态和服务端状态的差异导致的状态维护困难。
+[react官方文档](https://zh-hans.react.dev/learn/synchronizing-with-effects#what-are-good-alternatives-to-data-fetching-in-effects)也列举了一些直接在`useEffect`中发起网络请求的缺点与替代方案。并推荐了我想向大家介绍的`react-query`。
 
-客户端状态总是同步的，完全由我们控制的。
+## 正式亮相
 
-但服务端状态并不能一股脑扔进状态管理的 store 里，因为它涉及有效性的问题。
+`@tanstack/query` （曾用名 `react-query`，下文简称 query）是一个异步状态管理工具。
 
-传统的方案是每次使用服务端状态前都要发送一个网络请求，经过一个 `loading`，以保证数据都有效性。但这么做其实是一种懒惰：以牺牲用户体验为代价，减少程序员的开发量。
+它支持 react/vue/angular 等主流前端框架。我自己在公司的项目中有深度使用过 react 和 vue 的版本，体验都还不错。
 
-因为我们仔细思考一下就会发现一些数据并不总是变化的：
+异步状态管理工具，简单地说，就是管理基于异步操作而获得的状态。通常是管理网络请求返回的数据以及衍生状态。这个后续会详细介绍。
 
-- 基金的收益只有结算时会揭露，且每天一次。
-- 一个用户的个人简介可能几个月也不会变化一次。
-- ”我的关注”列表什么时候发生了变化只有用户自己最清楚。
+先看一下这个库的成绩：
 
-如果我们既不想要每次使用异步状态都弹出一个`loading`阻塞用户操作，又不想自己手动管理复杂的异步状态何时过期、何时刷新的话，可以尝试使用 query，query 提供了较完善的方案。
+> [github](https://github.com/TanStack/query) 42.7k ⭐️，npm[周下载量](https://www.npmjs.com/package/@tanstack/react-query) 4422006。
 
-query 可以让我们轻松的完成以下功能：
+这个数据看起来非常夸张，实际上也确实如此，query 在国外是非常主流的技术选择。
 
-- Cache 管理
-- 轮询
-- 翻页缓存
-- 自动重载
-- 无限滚动
-- 窗口聚焦自动重载
-- 离线数据
-- 失败重试
+query 在国内似乎比较冷门，也缺少完善的中文翻译。这也是我想做这个技术分享的原因，想把好的工具介绍给更多的国内开发者。
 
 ## query 基础使用
 
@@ -243,15 +200,15 @@ queryFn: async () => {
 }
 ```
 
-不需要在这里嵌套`try-catch`，直接 throw Error 是为了告诉 query 发生了错误。
+不需要在这里嵌套`try-catch`，直接 throw Error 是为了让 query 知道发生了错误。
 
-query 的定位是异步状态管理工具，和`pinia\jotai`这种同步状态管理库、还有`axios`这种网络请求库是完全不冲突的，因为定位不一样。
+query 的定位是异步状态管理工具，和`pinia/jotai`这种同步状态管理库、还有`axios`这种网络请求库是完全不冲突的，因为定位不一样。
 
 所以正式项目推荐把基于`axios`发起的网络请求作为`queryFn`。
 
 ## 关于 queryKey
 
-`queryKey`是一个数组，通常首位是对状态的简要描述。比如如果获取学生列表就可以是`['student']`。如果获取血色好难过详情就可以是`['student',id]`。
+`queryKey`是一个数组，通常首位是对状态的简要描述。比如如果获取学生列表就可以是`['student']`。如果获取学生详情就可以是`['student',id]`。
 
 请求相关的参数也应该放到`queryKey`列表中，每当`queryKey`变更就会重新执行查询函数，并把查询结果缓存起来。
 

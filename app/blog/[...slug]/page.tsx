@@ -36,8 +36,8 @@ export async function generateMetadata(props: {
     return
   }
 
-  const publishedAt = new Date(post.date).toISOString()
-  const modifiedAt = new Date(post.lastmod || post.date).toISOString()
+  // const publishedAt = new Date(post.date).toISOString()
+  // const modifiedAt = new Date(post.lastmod || post.date).toISOString()
   const authors = authorDetails.map((author) => author.name)
   let imageList = [siteMetadata.socialBanner]
   if (post.images) {
@@ -58,8 +58,8 @@ export async function generateMetadata(props: {
       siteName: siteMetadata.title,
       locale: 'en_US',
       type: 'article',
-      publishedTime: publishedAt,
-      modifiedTime: modifiedAt,
+      // publishedTime: publishedAt,
+      // modifiedTime: modifiedAt,
       url: './',
       images: ogImages,
       authors: authors.length > 0 ? authors : [siteMetadata.author],
@@ -81,7 +81,7 @@ export default async function Page(props: { params: Promise<{ slug: string[] }> 
   const params = await props.params
   const slug = decodeURI(params.slug.join('/'))
   // Filter out drafts in production
-  const sortedCoreContents = allCoreContent(sortPosts(allBlogs))
+  const sortedCoreContents = allCoreContent(allBlogs)
   const postIndex = sortedCoreContents.findIndex((p) => p.slug === slug)
   if (postIndex === -1) {
     return notFound()
