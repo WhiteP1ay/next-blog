@@ -20,32 +20,13 @@ summary: 本文介绍我们请求网络数据时面临哪些困境，以及为�
 在使用原生的 `fetch api` 获取数据时，大家通常会这么写。
 
 ```tsx
-// 一个简单的获取学生列表的组件
-const StudentList = () => {
-  // 定义状态存储学生数据
-  const [students, setStudents] = useState([])
-
-  // 组件挂载时获取数据
-  useEffect(() => {
-    fetch('https://api.example.com/students')
-      .then((res) => res.json())
-      .then((data) => {
-        setStudents(data)
-      })
-  }, [])
-
-  return (
-    <ul>
-      {students.map((student) => (
-        <li key={student.id}>
-          <p>姓名: {student.name}</p>
-          <p>年龄: {student.age}</p>
-          <p>性别: {student.gender}</p>
-        </li>
-      ))}
-    </ul>
-  )
-}
+useEffect(() => {
+  fetch('https://api.example.com/students')
+    .then((res) => res.json())
+    .then((data) => {
+      setStudents(data)
+    })
+}, [])
 ```
 
 很简洁，但这种写法只能在demo里使用。
@@ -157,7 +138,7 @@ useEffect(() => {
 
 [react官方文档](https://zh-hans.react.dev/learn/synchronizing-with-effects#what-are-good-alternatives-to-data-fetching-in-effects)也列举了一些直接在`useEffect`中发起网络请求的缺点与替代方案。并推荐了我想向大家介绍的`react-query`。
 
-## 正式亮相
+## 介绍
 
 `@tanstack/query` （曾用名 `react-query`，下文简称 query）是一个异步状态管理工具。
 
@@ -184,7 +165,7 @@ useQuery({
 })
 ```
 
-## 关于 queryFn
+### 关于 queryFn
 
 `queryFn` 总是返回一个 Promise，因为 query 并不在乎`queryFn`中是否有一个真实的网络请求，query 只在乎 Promise 的状态。
 
@@ -206,7 +187,7 @@ query 的定位是异步状态管理工具，和`pinia/jotai`这种同步状态�
 
 所以正式项目推荐把基于`axios`发起的网络请求作为`queryFn`。
 
-## 关于 queryKey
+### 关于 queryKey
 
 `queryKey`是一个数组，通常首位是对状态的简要描述。比如如果获取学生列表就可以是`['student']`。如果获取学生详情就可以是`['student',id]`。
 
