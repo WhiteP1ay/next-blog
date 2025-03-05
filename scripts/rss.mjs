@@ -5,7 +5,6 @@ import { escape } from 'pliny/utils/htmlEscaper.js'
 import siteMetadata from '../data/siteMetadata.js'
 import tagData from '../app/tag-data.json' with { type: 'json' }
 import { allBlogs } from '../.contentlayer/generated/index.mjs'
-import { sortPosts } from 'pliny/utils/contentlayer.js'
 
 const outputFolder = process.env.EXPORT ? 'out' : 'public'
 
@@ -41,7 +40,7 @@ async function generateRSS(config, allBlogs, page = 'feed.xml') {
   const publishPosts = allBlogs.filter((post) => post.draft !== true)
   // RSS for blog post
   if (publishPosts.length > 0) {
-    const rss = generateRss(config, sortPosts(publishPosts))
+    const rss = generateRss(config, publishPosts)
     writeFileSync(`./${outputFolder}/${page}`, rss)
   }
 
