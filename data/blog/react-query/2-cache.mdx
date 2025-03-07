@@ -5,9 +5,15 @@ draft: false
 summary: 基于react-query优雅地管理缓存
 ---
 
-> "There are only two hard things in Computer Science: cache invalidation and naming things."
+![大连的跨海大桥](https://phzdoc.oss-cn-beijing.aliyuncs.com/uPic/dalian.png)
 
-> 缓存的失效时机和变量命名是计算机科学中两个困难的问题。
+> 大连的跨海大桥，在夜色下显得格外美丽。
+
+> There are only two hard things in Computer Science: cache invalidation and naming things.
+
+上一篇文章我们简单说了`useQuery`的用法，并提到基于`react-query`实现缓存非常简单。
+
+这一篇我们详细聊聊缓存。
 
 ## 过期时间
 
@@ -15,7 +21,7 @@ summary: 基于react-query优雅地管理缓存
 
 - 基金收益明细，每只基金的收益明细每天只会更新一次。
 - 用户头像，用户头像只有在用户自己手动修改之后才会变更。
-- 评论列表，评论列表几乎没有实时性的需求，半小时更新一次也能接受。
+- 评论列表，评论列表如果实时性要求不高，半小时更新一次也能接受。
 
 如果我们手动去管理过期时间，一定是一个非常痛苦的过程。好在 `useQuery` 提供了 `staleTime` 参数用来定义过期时间（毫秒单位）。
 
@@ -31,7 +37,7 @@ summary: 基于react-query优雅地管理缓存
 
 意味着一分钟内，不会再发网络请求，而是直接从缓存里取值返回。
 
-该值默认为 0，缓存保质期是多久应该由开发人员和业务场景决定。
+该值默认为 0，缓存保质期是多久应该由开发人员和业务场景决定。我建议在设置缓存有效期时，应该与产品经理、后端开发、测试同学沟通，确定一个合理的缓存有效期。不要通过拍脑袋决定缓存有效期，否则很容易给后续的维护带来麻烦。
 
 注意：即便缓存过期了，query 也不会自动重新获取数据。什么时候才会触发query的自动更新呢？
 
