@@ -1,0 +1,185 @@
+---
+title: 玩转 useQuery —— react-query 【2】深入了解 useQuery
+tags: ['react-query', '技术']
+draft: false
+summary: 深入了解 useQuery
+---
+
+![大连的跨海大桥](https://phzdoc.oss-cn-beijing.aliyuncs.com/uPic/dalian.png)
+
+> 大连的跨海大桥，在夜色下显得格外美丽。
+
+> There are only two hard things in Computer Science: cache invalidation and naming things.
+
+上一篇文章我们简单说了`useQuery`的用法，并提到基于`react-query`实现缓存非常简单。
+
+这一篇我们详细聊聊`useQuery`，以及它的一些高级用法。
+
+## 过期时间
+
+开发者是能够预估出当前业务场景下数据大致的过期时间，比如
+
+- 基金收益明细，每只基金的收益明细每天只会更新一次。
+- 用户头像，用户头像只有在用户自己手动修改之后才会变更。
+- 评论列表，评论列表如果实时性要求不高，半小时更新一次也能接受。
+
+如果我们手动去管理过期时间，一定是一个非常痛苦的过程。好在 `useQuery` 提供了 `staleTime` 参数用来定义过期时间（毫秒单位）。
+
+如果没超时，将不会发请求，而是直接返回缓存数据。这在一定程度上减少了网络请求，减轻服务器压力同时提升了用户体验。
+
+例如：
+
+```ts
+{
+  staleTime: 60000
+}
+```
+
+意味着一分钟内，不会再发网络请求，而是直接从缓存里取值返回。
+
+该值默认为 0，缓存保质期是多久应该由开发人员和业务场景决定。我建议在设置缓存有效期时，应该与产品经理、后端开发、测试同学沟通，确定一个合理的缓存有效期。不要通过拍脑袋决定缓存有效期，否则很容易给后续的维护带来麻烦。
+
+注意：即便缓存过期了，query 也不会自动重新获取数据。什么时候才会触发query的自动更新呢？
+
+## Trigger
+
+只有以下四种情况会更新缓存数据。
+
+1. `queryKey`变更（比如queryKey是`[todo, page]`，当`page`变更时，意味着用户想看下一页数据了，query会重新请求数据）
+2. 订阅过期状态的组件渲染到页面（比如一个引用了过期缓存的弹窗，该弹窗的弹出会导致更新缓存）
+3. 浏览器窗口重新获取焦点
+4. 设备网络成功重连
+
+其中三种情况可以手动关闭
+
+```ts
+useQuery({
+  queryKey: ['todo', sort],
+  queryFn: () => fetchTodo(sort),
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+  // 也可以设置无穷大 Infinity
+  staleTime: 30 * 1000,
+})
+```
+
+## 条件性请求
+
+所谓条件性请求，就是指 query 只在某个场景下或某种条件达成的前提下进行。
+
+比如：
+
+```tsx
+//!!! 错误示范
+if (keyword) {
+  useQuery({
+    queryKey: ['search', keyword],
+    queryFn,
+  })
+}
+```
+
+但很明显，这违反了 `hook` 的设计规范。
+
+可以通过传入 `enabled` 来解决条件性请求。即：仅当 `enabled` 为 `true` 时，query 才会被触发。
+
+```tsx
+useQuery({
+  queryKey: ['search', keyword],
+  queryFn,
+  enabled: !!keyword,
+})
+```
+
+## 依赖性请求
+
+依赖性请求是条件性请求的一种，指当前请求依赖于其他请求的结果。
+
+比如：假设一本书的评论要等待书的详情加载完毕再加载。
+
+```tsx
+//!!! 耦合度过高
+useQuery({
+  queryKey: ['book', 'comments', bookId],
+  queryFn: async () => {
+    const book = await fetchBookDetail(bookId)
+    const author = await fetchAuthorDetail(book.data.authorId)
+    return {
+      book,
+      author,
+    }
+  },
+})
+```
+
+依赖性请求可以在 `queryFn` 里通过多个 `await` 处理，但这并不利于逻辑的抽象。
+
+我们把网络请求封装为 hook 就是为了把逻辑抽象出来，封装好，以备后续复用。
+
+如果两个请求不是必然关联在一起，我更推荐拆分开，基于 `enabled` 控制请求触发时机。这样更灵活，耦合度更低，是更优雅的逻辑抽象。
+
+```tsx
+const useBookDetail = (bookId: string) => {
+  return useQuery({
+    queryKey: ['book', bookId],
+    queryFn: () => fetchBookDetail(bookId),
+    enabled: !!bookId,
+  })
+}
+```
+
+```tsx
+const useBookComments = (bookId: string, enabled: boolean) => {
+  return useQuery({
+    queryKey: ['bookComments', bookId],
+    queryFn: () => fetchBookComments(bookId),
+    enabled,
+  })
+}
+```
+
+```tsx
+const useBookDetailAndComments = (bookId: string) => {
+  const { isSuccess, data: book } = useBookDetail(bookId)
+  const comments = useBookComments(bookId, isSuccess)
+
+  return {
+    comments,
+    book,
+  }
+}
+```
+
+## 轮询
+
+轮询通常用于那些需要实时性反馈的场景，比如查询用户是否完成支付。
+
+`useQuery` 的 `refetchInterval` 参数可以定义轮询时间，单位毫秒。
+
+```ts
+useQuery({
+  queryKey: ['list', { sort }],
+  queryFn,
+  refetchInterval: 5000, // 5 seconds 轮询
+})
+```
+
+`refetchInterval` 也可以是一个函数。
+
+示例：前端通过轮询来得知用户是否完成支付，用户一旦完成支付轮询就该停止。
+
+```ts
+{
+   ...,
+  refetchInterval: (query) => {
+    // query 是当前请求的 query 对象，包含了本次query的各种配置和元信息。
+    // 数据结构由react-query提供
+    // query.state.data 是当前请求的响应数据
+    if (query.state.data?.finished) {
+      return false
+    }
+    return 3000
+  },
+}
+```
