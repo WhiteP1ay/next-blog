@@ -1,8 +1,17 @@
-# 预加载 prefetch
+---
+title: 抹除loading —— react-query 【3】预加载
+tags: ['react-query', '技术']
+draft: false
+summary: 本文将介绍如何通过预加载技术尽可能抹除加载等待时间
+---
 
-预加载是指，基于某种条件，提前请求数据。
+![玳瑁猫](https://phzdoc.oss-cn-beijing.aliyuncs.com/uPic/cat.png)
 
-预加载的好处是可以减少用户等待时间，提升用户体验。
+> 大觉寺拍到的大橘，一点都不怕人
+
+预加载是指，预判用户行为，提前请求数据。
+
+预加载的好处是可以减少用户等待时间，提升用户体验。坏处是可能预判出错，浪费网络资源。坏处相比于优点，可以忽略不计。
 
 ## 基于 query 的预加载实现
 
@@ -60,51 +69,47 @@ const queryClient = useQueryClient();
 
 ```tsx
 const useBookDetail = (id: number) => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   return useQuery({
-    queryKey: ["book", id],
+    queryKey: ['book', id],
     queryFn: () => fetchBookDetail(id),
     placeholderData: () => {
-      const data =
-        (queryClient.getQueryData(["book"]) as { id: number }[]).find(
-          (item) => item.id === id
-        ) ?? undefined;
-      return data as Book;
+      const data = queryClient.getQueryData(['book']).find((item) => item.id === id) ?? undefined
+      return data
     },
-  });
-};
+  })
+}
 ```
 
 ## 完整示例
 
 ```tsx
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchBooks, fetchBookDetail, Book } from "../api/book";
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { fetchBooks, fetchBookDetail, Book } from '../api/book'
 
 type PropsType = {
-  id: number;
-  setBookId: (id: number | undefined) => void;
-};
+  id: number
+  setBookId: (id: number | undefined) => void
+}
 
 const useBookDetail = (id: number) => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   return useQuery({
-    queryKey: ["book", id],
+    queryKey: ['book', id],
     queryFn: () => fetchBookDetail(id),
     placeholderData: () => {
       const data =
-        (queryClient.getQueryData(["book"]) as { id: number }[]).find(
-          (item) => item.id === id
-        ) ?? undefined;
-      return data as Book;
+        (queryClient.getQueryData(['book']) as { id: number }[]).find((item) => item.id === id) ??
+        undefined
+      return data as Book
     },
-  });
-};
+  })
+}
 
 const BookDetail = ({ id, setBookId }: PropsType) => {
   // isPlaceHolderData 更准确的指示器
-  const { data, isPlaceholderData } = useBookDetail(id);
+  const { data, isPlaceholderData } = useBookDetail(id)
   return (
     <div>
       <button onClick={() => setBookId(undefined)}>back</button>
@@ -121,40 +126,37 @@ const BookDetail = ({ id, setBookId }: PropsType) => {
         </>
       )}
     </div>
-  );
-};
+  )
+}
 
 const useBookList = () => {
-  return useQuery({ queryKey: ["book"], queryFn: fetchBooks });
-};
+  return useQuery({ queryKey: ['book'], queryFn: fetchBooks })
+}
 
 const BookList = ({ setBookId }: { setBookId: (id: number) => void }) => {
-  const { data, isLoading } = useBookList();
-  const queryClient = useQueryClient();
+  const { data, isLoading } = useBookList()
+  const queryClient = useQueryClient()
 
   const handlePrefetch = (id: number) => {
     queryClient.prefetchQuery({
-      queryKey: ["book", id],
+      queryKey: ['book', id],
       queryFn: () => fetchBookDetail(id),
       staleTime: 60 * 1000, //避免过于频繁的网络请求
-    });
-  };
+    })
+  }
 
   if (isLoading) {
-    return <p>loading</p>;
+    return <p>loading</p>
   }
   return data?.map((item) => (
-    <div
-      onClick={() => setBookId(item.id)}
-      onMouseEnter={() => handlePrefetch(item.id)}
-    >
+    <div onClick={() => setBookId(item.id)} onMouseEnter={() => handlePrefetch(item.id)}>
       {item.title}
     </div>
-  ));
-};
+  ))
+}
 
 const BookApp = () => {
-  const [bookId, setBookId] = useState<number | undefined>(undefined);
+  const [bookId, setBookId] = useState<number | undefined>(undefined)
 
   return (
     <>
@@ -164,8 +166,8 @@ const BookApp = () => {
         <BookList setBookId={setBookId} />
       )}
     </>
-  );
-};
+  )
+}
 
-export default BookApp;
+export default BookApp
 ```
