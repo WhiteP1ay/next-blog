@@ -1,4 +1,13 @@
-# Mutation & 乐观更新
+---
+title: mutation & 乐观更新 —— react-query 【5】数据变更
+tags: ['react-query', '技术']
+draft: false
+summary: 介绍了什么是mutation，以及如何基于mutation实现乐观更新
+---
+
+![夜晚的鸟巢](https://phzdoc.oss-cn-beijing.aliyuncs.com/uPic/Snipaste_2025-03-19_10-15-24.png)
+
+> 夜晚的鸟巢
 
 > Unlike queries, mutations are typically used to create/update/delete data or perform server side-effects. For this purpose, TanStack Query exports a useMutation hook.
 
@@ -11,7 +20,7 @@
 比如 react 自己的`useState` hook，顾名思义，它本质也是一种状态管理。
 
 ```ts
-const [state, setState] = useState(initialState);
+const [state, setState] = useState(initialState)
 ```
 
 它返回的`state` 是用于获取数据的，`setState` 是用于修改数据的。
@@ -25,22 +34,22 @@ const [state, setState] = useState(initialState);
 ```tsx
 const { mutate, isPending, isSuccess, isError } = useMutation({
   mutationFn: () => {
-    return axios.post("/api/user", { name: "jack" });
+    return axios.post('/api/user', { name: 'jack' })
   },
   // 以下方法在 mutate 各个阶段触发
   onMutate: () => {
-    console.log("onMutate");
+    console.log('onMutate')
   },
   onSuccess: () => {
-    console.log("onSuccess");
+    console.log('onSuccess')
   },
   onError: () => {
-    console.log("onError");
+    console.log('onError')
   },
   onSettled: () => {
-    console.log("onSettled");
+    console.log('onSettled')
   },
-});
+})
 ```
 
 为什么不直接调用 `axios.post(...)`，而是要通过`useMutation`来调用？
@@ -56,19 +65,19 @@ const { mutate, isPending, isSuccess, isError } = useMutation({
 ```tsx
 const { mutate } = useMutation({
   mutationFn: () => {
-    return axios.post("/api/user", { name: "jack" });
+    return axios.post('/api/user', { name: 'jack' })
   },
   onSuccess: (newUser) => {
-    toast.success("User created successfully");
+    toast.success('User created successfully')
     // 创建用户成功后，更新缓存中的用户列表
-    queryClient.setQueryData(["users", newUser.id], newUser);
+    queryClient.setQueryData(['users', newUser.id], newUser)
     // 或者创建用户成功后，让之前的缓存数据失效，并重新获取数据（即刷新缓存）
-    queryClient.invalidateQueries({ queryKey: ["users"] });
+    queryClient.invalidateQueries({ queryKey: ['users'] })
   },
-});
+})
 ```
 
-`setQueryData` 是用于设置缓存数据
+`setQueryData` 是用于手动设置缓存数据
 
 `invalidateQueries` 是用于让之前基于`queryKey`缓存的数据失效并重新获取数据（即刷新缓存）。
 
@@ -112,62 +121,60 @@ onError 函数的第三个参数是 context，它是`onMutate`的返回值，在
 
 ```ts
 onMutate: async ({ targetData }) => {
-  const snapshot = queryClient.getQueryData(queryKey);
+  const snapshot = queryClient.getQueryData(queryKey)
   // 乐观更新
   queryClient.setQueryData(queryKey, (oldData) => {
     //handle old data and then
-    return newData;
-  });
+    return newData
+  })
   // 回滚
-  return () => queryClient.setQueryData(queryKey, snapshot);
-};
+  return () => queryClient.setQueryData(queryKey, snapshot)
+}
 onError: (err, variables, rollback) => {
-  rollback?.();
-};
+  rollback?.()
+}
 
 onSettled: () => {
   return queryClient.invalidateQueries({
     queryKey,
-  });
-};
+  })
+}
 ```
 
 ## 真实代码
 
 ```tsx
 export type Todo = {
-  id: number;
-  title: string;
-  description: string;
-  completed: boolean;
-};
+  id: number
+  title: string
+  description: string
+  completed: boolean
+}
 
 const useCheckTodo = () => {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ todo }: { todo: Todo }) => checkTodo(todo),
     onMutate: ({ todo }) => {
-      const snapshot = queryClient.getQueryData(["todoList"]);
-      queryClient.setQueryData(["todoList"], (oldData: Todo[]) => {
-        return oldData.map((t) =>
-          t.id === todo.id ? { ...t, completed: !t.completed } : t
-        );
-      });
+      const snapshot = queryClient.getQueryData(['todoList'])
+      queryClient.setQueryData(['todoList'], (oldData: Todo[]) => {
+        return oldData.map((t) => (t.id === todo.id ? { ...t, completed: !t.completed } : t))
+      })
       /**
        * The value returned from this function will be passed to both the onError and onSettled functions in the event of a mutation failure and can be useful for rolling back optimistic updates.
        */
       return () => {
-        queryClient.setQueryData(["todoList"], snapshot);
-      };
+        queryClient.setQueryData(['todoList'], snapshot)
+      }
     },
     onError: (error, todo, rollback) => {
-      rollback?.();
+      rollback?.()
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["todoList"] });
+      queryClient.invalidateQueries({ queryKey: ['todoList'] })
     },
-  });
-};
+  })
+}
 ```
 
 ## hook 封装
@@ -177,13 +184,8 @@ const useCheckTodo = () => {
 > 但我觉得一个项目中涉及到乐观更新的地方其实并不多，基于`useMutate`调用`onMutate`，`onError`，`onSettled`等方法，可以很方便的实现乐观更新。封装了 Hook 后，反而增加了代码的复杂度。
 
 ```tsx
-export const useOptimisticMutation = ({
-  mutationFn,
-  queryKey,
-  updater,
-  invalidates,
-}) => {
-  const queryClient = useQueryClient();
+export const useOptimisticMutation = ({ mutationFn, queryKey, updater, invalidates }) => {
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn,
@@ -191,24 +193,24 @@ export const useOptimisticMutation = ({
       // 取消任何相关请求，避免覆盖结果
       await queryClient.cancelQueries({
         queryKey,
-      });
+      })
 
-      const snapshot = queryClient.getQueryData(queryKey);
+      const snapshot = queryClient.getQueryData(queryKey)
 
-      queryClient.setQueryData(queryKey, updater);
+      queryClient.setQueryData(queryKey, updater)
 
       return () => {
-        queryClient.setQueryData(queryKey, snapshot);
-      };
+        queryClient.setQueryData(queryKey, snapshot)
+      }
     },
     onError: (err, variables, rollback) => {
-      rollback?.();
+      rollback?.()
     },
     onSettled: () => {
       return queryClient.invalidateQueries({
         queryKey: invalidates,
-      });
+      })
     },
-  });
-};
+  })
+}
 ```
