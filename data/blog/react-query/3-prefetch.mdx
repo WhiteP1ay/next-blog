@@ -53,6 +53,28 @@ const queryClient = useQueryClient();
 
 > 为`prefetchQuery`提供`staleTime`参数，它表示缓存数据的有效时间。这有效避免了过于频繁的网络请求。
 
+我们通过`prefetchQuery`预加载了详情页数据，当用户点击列表项时，数据已经请求回来并放到缓存中，接下来我们只需要从缓存中获取数据即可。
+
+```tsx
+const useBookDetail = (id: number) => {
+  const queryClient = useQueryClient()
+  return useQuery({
+    queryKey: ['book', id],
+    queryFn: () => fetchBookDetail(id),
+    initialData: () => {
+      const cache = queryClient.getQueryData<Book>(['bookDetail', id])
+      return cache
+    },
+  })
+}
+```
+
+这里我们通过`initialData`参数，从缓存中获取数据。
+有两个注意点
+
+1. id的数据类型一定要保持统一，通过`prefetchQuery`向queryClient中添加缓存数据时，`queryKey`是什么，取的时候就要是什么。id千万不要一会是number一会是string，这样取到的数据会是undefined。
+2. 我们没使用`initialData`的时候，useQuery会基于queryFn推导出data的类型，使用`initialData`的时候，data的类型会变为unknown，因为`initialData`的类型无法自动推导，所以需要我们手动指定，这里我们通过泛型的方法指定为`Book`类型。
+
 ## 占位符
 
 预加载并不是银弹，它并不能完全消除用户的等待时间，它只能减少用户的等待时间。
@@ -61,7 +83,7 @@ const queryClient = useQueryClient();
 
 如果网络请求没有响应，详情页只能展示一个大大的 loading 吗？
 
-当然不，在列表时我们已经得知了一些基本数据，比如书名。那么详情页可以先展示书名。query 提供了`placeholderData`参数，可以设置占位符数据。
+当然不，在列表时我们已经得知了一些基本数据，比如书名、作者。那么详情页可以先展示书名、作者。query 提供了`placeholderData`参数，可以设置占位符数据。
 
 `queryClient`提供了`getQueryData`方法，可以获取缓存数据。
 
