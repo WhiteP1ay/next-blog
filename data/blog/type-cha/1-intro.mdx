@@ -1,0 +1,84 @@
+---
+title: 类型体操入门 —— 前言&第一题
+tags: ['TypeScript类型体操', '技术']
+draft: false
+summary: 前言&第一题
+---
+
+## 前言
+
+TypeScript 既是一门独立的编程语言，也是一套强大的类型扩展工具。
+
+它为 JavaScript 添加了静态类型系统，将原本灵活的弱类型语言转变为更适合大型项目的强类型语言。
+
+然而，这种兼容性也让许多开发者低估了它的学习深度——很多人只是把 `.js` 改成 `.ts` 后缀，加上几个 `interface` 和 `type` 就认为自己掌握了 TypeScript。实际上，正是这种低门槛让开发者容易停留在基础用法，当遇到复杂类型需求时，往往选择用 `any` 逃避类型约束。
+
+无论是 Code Review 时被指出滥用 `any` 的窘迫，还是面试时被高级类型问题难住的尴尬，都说明我们需要更系统地掌握类型系统。
+
+接下来几期内容我将通过「类型体操」的方式，带你深入理解 TypeScript 的类型编程艺术。
+
+先说一下什么是类型体操。
+
+因为Typescript的类型系统通常认为是图灵完备的，所以有些高级玩家喜欢做一些类型系统的挑战——只用类型系统来完成一些复杂功能。比如项目[hyperscript](https://github.com/ronami/HypeScript)，就是仅用类型系统完成了一个简易版本的Typescript类型系统。
+
+不过，这些复杂的类型操作在编译成 JavaScript 后会被无情地抛弃，所以它们基本属于**“代码界的艺术体操”**——炫技、优雅，但没啥实际用处。
+
+如果没啥实际用处，那我们为什么要学习类型体操？
+
+我觉得这个过程就像打游戏，地狱难度你都cover住了，平常工作中那些easy难度的小挑战自然不在话下。
+
+[type-challges](https://github.com/type-challenges/type-challenges)是github上一个很火爆的项目，里面收集了一系列类型体操，并按难度划分，只要鼠标点点，就可以在网页里挑战这些难题。
+
+## Hello World
+
+接下来我们看一下第一题，热身难度的Hello World。
+
+```typescript
+type HelloWorld = any
+
+// you should make this work
+type test = Expect<Equal<HelloWorld, string>>
+```
+
+题目要求希望类型HelloWorld等同于string。那请问我这么写可以吗？
+
+```typescript
+type HelloWorld = ''
+```
+
+不可以，因为这样HelloWord的类型不会被推导成为字符串，而是被推到为值为空字符串的值类型。没错，单个数值也是一种类型。
+
+所以正确方法如下。
+
+```ts
+type HelloWorld = string
+```
+
+但这很奇怪不是吗，string作为一种独立存在的类型可以被“赋值”给另一个类型。
+
+这是因为type命令存在的意义就是**类型别名**，也正是因为存在的意义是别名，所以不可以重名。
+
+```ts
+type HelloWorld = string
+// 会因为重名导致报错
+type HelloWorld = number
+```
+
+那如果不可以重名，也就意味着有“类型命名作用域”。也就是说，不能重名的限制需要明确在一个指定范围。否则type命令将导致整个项目存在潜在的命名冲突。
+
+那让我们尝试一下一下代码。
+
+```ts
+type HelloWorld = string
+{
+  type HelloWorld = number
+}
+```
+
+由此得知，别名的作用域是块级作用域。这样我们通过一道简单的类型体操热身，对ts有了更深入的了解。
+
+**推荐阅读**
+
+阮一峰 [Typescript教程](https://wangdoc.com/typescript/)
+
+弥补了ts官方文档缺少中文翻译的不足，是ts入门的好资料。
