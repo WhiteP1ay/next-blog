@@ -1,0 +1,216 @@
+---
+title: 类型体操入门 —— keyof/in/泛型约束实现Pick
+tags: ['TypeScript类型体操', '技术']
+draft: false
+summary: 从Pick讲解为前缀，展开讲解什么是keyof/in/泛型约束，以及如何实现Pick等初级类型体操
+---
+
+## Pick
+
+这道题要我们实现一个Pick，Pick作为常用的内置工具类型，我想大家都知道它的作用。简单的举一个例子:
+
+```ts
+interface Todo {
+  title: string
+  description: string
+  completed: boolean
+}
+
+type TodoPreview = MyPick<Todo, 'title' | 'completed'>
+
+// 如此一来，我便从Todo里取出了title和completed
+const todo: TodoPreview = {
+  title: 'Clean room',
+  completed: false,
+}
+```
+
+在讲解Pick如何实现，我想有几个前置知识点是要知道的。
+
+- keyof 运算符
+- in 运算符
+- 泛型与条件约束
+
+## 前置内容
+
+### keyof运算符
+
+`keyof`运算符可以取出对象类型的键名的联合类型
+
+```ts
+type MyObj = {
+  foo: number
+  bar: string
+}
+
+type Keys = keyof MyObj // 'foo'|'bar'
+```
+
+### in运算符
+
+`in`运算符用来取出联合类型的每一个成员类型。可以理解成针对类型的遍历操作。
+
+```ts
+type U = 'a' | 'b' | 'c'
+
+type Foo = {
+  [Prop in U]: number
+}
+// 等同于
+type Foo = {
+  a: number
+  b: number
+  c: number
+}
+```
+
+### 结合keyof 和 in
+
+`keyof`和`in`运算符经常结合起来用，`keyof`负责取出对象类型的键名，`in`负责遍历这些键名。
+
+我们可以做一个简单的练习，假如有一个对象类型，里面有属性a、b、c...，现在我想要一个如下的对象类型，应该怎么做呢？
+
+```ts
+type O = {
+  a: 1
+  b: 2
+  c: 3
+  ...
+}
+
+//如何通过O获得R？
+type R = {
+  a: true
+  b: true
+  c: true
+}
+```
+
+答案如下，先写一个大括号，因为返回的肯定是对象类型。
+
+然后左边是中括号，因为我们不可能一个个的把O的属性名写出来。
+
+右边是写死的true。
+
+中括号里写什么呢？先写`keyof`操作符提取O的所有键名，再用`in`操作符做遍历，大功告成！
+
+```ts
+type R = {
+  [key in keyof O]: true
+}
+```
+
+### 泛型与约束
+
+泛型简单的说就是类型参数，当我们拿不准一个地方应该用什么类型，但又要对其有后续操作的时候，就可以用泛型做一个临时指代。
+
+上面这句话有点抽象，如果看不懂的话推荐你来[这里](https://wangdoc.com/typescript/generics)看泛型介绍。我就不再赘述了。
+
+泛型的约束才是我要说的重点。泛型可以被约束，比如你希望传入的值必须有length属性，也就是想限制这个变量可能是数组或者可能是字符串。那应该怎么办呢？
+
+比如下面这个例子，相比较两个参数的length属性大小，就必须限制参数的类型有length属性。注释里，通过`<T extends {length:number}>`，限制了T必须有length属性。
+
+```ts
+function comp(a, b) {
+  if (a.length >= b.length) {
+    return a
+  }
+  return b
+}
+// function comp <T extends {length:number}>(a:T ,b:T){
+// 	...
+// }
+```
+
+你可能想反驳，如果有一个对象有属性length，也有可能既不是数组也不是字符串啊，它也能通过类型校验不是吗？似乎这么写似乎不是很严谨。
+
+这是因为涉及到了鸭子类型的思想。什么是鸭子类型呢？有一句经典的话你可能听过：
+
+“当看到一只鸟走起来像鸭子、游泳起来像鸭子、叫起来也像鸭子，那么这只鸟就可以被称为鸭子。”
+
+所以重点不是这个参数究竟是什么类型，而是它是否具有你想要的属性。
+
+我们可以看看`Typescript`是如何实现Promise类型的。
+
+```ts
+// 简化版，详见lib.es5.d.ts
+interface Promise {
+  then(...)
+  catch(...)
+}
+```
+
+也是基于鸭子类型的思想，简单的讲，如果这个对象可以点then，点catch，那么我就认定你是Promise。
+
+类似的还有一个类型叫PromiseLike的类型，它的定义更简单，这个对象能点then，我就认为你是PromiseLike，一个类似Promise的对象。
+
+```ts
+// 简化版，详见lib.es5.d.ts
+interface PromiseLike{
+    then(...)
+}
+```
+
+## 回到Pick
+
+所以Pick要如何实现呢，如果你看懂上面的讲解，那么答案呼之欲出了。
+
+```ts
+type Pick<T, K> = ...
+```
+
+答案如何呢？
+
+1. 先写一个大括号，因为返回的是对象类型
+2. 左边中括号，因为不可能写死每个属性，所以中括号里面是key in K以遍历每个属性名。
+3. K这个泛型需要约束，所以补充上 `K extends keyof T`
+4. 右边是T[key]，表示取值
+
+```ts
+type Pick<T, K extends keyof T> = {
+  [key in K]: T[key]
+}
+```
+
+完美~
+
+## 举一反三
+
+所以我们回到[类型体操](https://github.com/type-challenges/type-challenges/tree/main)这个项目中来，像[Readonly这道题](https://github.com/type-challenges/type-challenges/blob/main/questions/00007-easy-readonly/README.md)自然也就不在话下。
+
+如何实现一个内置的`Readonly<T>`？
+
+只需要遍历对象类型每一项的时候加上readonly前缀即可。
+
+```ts
+type Readonly<T> = {
+  readonly [key in keyof T]: T[key]
+}
+```
+
+还有像[这道题](https://github.com/type-challenges/type-challenges/blob/main/questions/00011-easy-tuple-to-object/README.md)，如何实现把元组转为对象类型？
+
+```ts
+// 例如
+const tuple = ['tesla', 'model 3', 'model X', 'model Y'] as const
+
+type result = TupleToObject<typeof tuple> // expected { 'tesla': 'tesla', 'model 3': 'model 3', 'model X': 'model X', 'model Y': 'model Y'}
+```
+
+如果你知道`tuple[number]`可以获取元组中每一项的联合类型的话，那么答案也将呼之欲出。
+
+```ts
+type TupleToObject<T extends readonly any[]> = {
+  [value in T[number]]: value
+}
+```
+
+值得注意的是，因为要把元组转成对象，包括对象的key和value，所以需要对元组做一个约束，要求它每一项都是可以拿来做key的类型。也就是`string | number | symbol`。
+
+最终答案是
+
+```ts
+type TupleToObject<T extends readonly (string | number | symbol)[]> = {
+  [value in T[number]]: value
+}
+```
