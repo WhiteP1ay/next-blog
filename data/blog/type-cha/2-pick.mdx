@@ -1,35 +1,16 @@
 ---
-title: 类型体操入门 —— keyof/in/泛型约束实现Pick
+title: 类型体操入门 —— 解决Pick等初级问题的套路
 tags: ['TypeScript类型体操', '技术']
 draft: false
 summary: 从Pick讲解为前缀，展开讲解什么是keyof/in/泛型约束，以及如何实现Pick等初级类型体操
 ---
 
-## Pick
-
-这道题要我们实现一个Pick，Pick作为常用的内置工具类型，我想大家都知道它的作用。简单的举一个例子:
-
-```ts
-interface Todo {
-  title: string
-  description: string
-  completed: boolean
-}
-
-type TodoPreview = MyPick<Todo, 'title' | 'completed'>
-
-// 如此一来，我便从Todo里取出了title和completed
-const todo: TodoPreview = {
-  title: 'Clean room',
-  completed: false,
-}
-```
-
-在讲解Pick如何实现，我想有几个前置知识点是要知道的。
+在讲解Pick等初级类型体操如何实现之前，我想有几个前置知识点是要知道的。
 
 - keyof 运算符
 - in 运算符
 - 泛型与条件约束
+- 鸭子类型
 
 ## 前置内容
 
@@ -188,7 +169,7 @@ type Readonly<T> = {
 }
 ```
 
-还有像[这道题](https://github.com/type-challenges/type-challenges/blob/main/questions/00011-easy-tuple-to-object/README.md)，如何实现把元组转为对象类型？
+还有像[这道题](https://github.com/type-challenges/type-challenges/blob/main/questions/00011-easy-tuple-to-object/README.md)，Tuple To Object，如何实现把元组转为对象类型？
 
 ```ts
 // 例如
@@ -214,3 +195,8 @@ type TupleToObject<T extends readonly (string | number | symbol)[]> = {
   [value in T[number]]: value
 }
 ```
+
+## 推荐阅读
+
+- [我的视频讲解](https://www.bilibili.com/video/BV16jJ8zQESv/)
+- [我的个人博客](https://www.whitemeta.cn/tags/typescript%E7%B1%BB%E5%9E%8B%E4%BD%93%E6%93%8D)
