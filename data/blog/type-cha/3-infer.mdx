@@ -1,0 +1,84 @@
+---
+title: 类型体操入门 —— 从infer到小学三年级数学
+tags: ['TypeScript类型体操']
+draft: false
+summary: 类型体操中的逻辑判断、Infer操作符、类型体操常见套路
+---
+
+> 面试官：讲讲ts中的infer；我：恰似小学三年级数学
+
+## infer与First
+
+typescriptg中的`infer`本质和小学三年级数学的设未知数x是一回事。
+
+比如[这道题](https://github.com/type-challenges/type-challenges/blob/main/questions/00014-easy-first/README.md)，要我们接收一个数组类型，返回该数组的第一项。
+
+```ts
+type arr1 = ['a', 'b', 'c']
+type arr2 = [3, 2, 1]
+
+type head1 = First<arr1> // expected to be 'a'
+type head2 = First<arr2> // expected to be 3
+```
+
+我们可以设数组的第一项是X，只是写法上要把“设”这个汉字变成"infer"这个单词。即`infer X`
+
+根据示例可以看出我们需要接收一个泛型，泛型约束是任意数组。所以等号左边如下：
+
+```ts
+type First<T extends any[]> = ...
+```
+
+接下来我们需要做一个逻辑判断，但注意这是类型系统，只能基于`extends`的三元表达式。
+
+extends 三元表达式后面会具体讲，当前把他理解成平常我们写的三元表达式即可。
+
+我们用三元表达式做以下判断：接收到的数组T是否可以拆分成第一项X和后续项呢？如果可以这么拆分，那么返回第一项X，如果不能如此拆分，就返回never，表示没有首项可以返回。所以答案如下。
+
+```ts
+type First<T extends any[]> = T extends [infer X, ...any] ? X : never
+```
+
+这道题是不是很简单？
+
+## 元组的length
+
+第一题迎刃而解，是不是有点没过瘾。那我们看接下来的[这道题](https://github.com/type-challenges/type-challenges/blob/main/questions/00018-easy-tuple-length/README.md)。给我们一个元组，要我们返回它的长度。
+
+```ts
+type tesla = ['tesla', 'model 3', 'model X', 'model Y']
+type spaceX = ['FALCON 9', 'FALCON HEAVY', 'DRAGON', 'STARSHIP', 'HUMAN SPACEFLIGHT']
+
+type teslaLength = Length<tesla> // expected 4
+type spaceXLength = Length<spaceX> // expected 5
+```
+
+一样，思路还是设未知数length为x。我们做一个逻辑判断：每次接收到的元组都有`length`值为x吗？如果为真则返回x，为假则返回`never`。
+
+所以我们给出的答案如下
+
+```ts
+type Length<T> = T extends { length: infer X } ? X : never
+```
+
+为了通过所有的测试用例，我们需要给T加上泛型限制，所以最终答案如下：其中 readonly表示泛型接收的数组具有只读性质，不可更改。
+
+```ts
+type Length<T extends readonly any[]> = T extends { length: infer X } ? X : never
+```
+
+为什么数组必须只读不可更改？因为如果是可变的数组，则length对应的类型将会是范围更大的number，无法确切的给出具体的数字，也就无法满足题目了。
+
+## extends 三元运算
+
+前面我们将extends当做javascript中的三元运算符来使用，但本质还是有一些不同的。
+
+在js中，三元运算符判断的是条件语句是否为真。但在类型系统中，extends三元运算是判断左侧类型是否为右侧类型的子类型。
+
+```ts
+Dog extends Animal ? true : false //返回true，因为Dog确实是Animal的子类型。
+```
+
+值得注意的是，当联合类型参与判断的时候，会把联合类型展开，每一个部分单独运算，最后返回多个结果的联合类型。这可能会与预计情况不符。
+
+这部分基础内容建议参考[阮一峰的文章](https://wangdoc.com/typescript/operator#extends-%E6%9D%A1%E4%BB%B6%E8%BF%90%E7%AE%97%E7%AC%A6)。

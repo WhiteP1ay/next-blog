@@ -1,14 +1,18 @@
-import Link from '@/components/Link'
 import Tag from '@/components/Tag'
+import Link from '@/components/Link'
 import siteMetadata from '@/data/siteMetadata'
-import { formatDate } from 'pliny/utils/formatDate'
+import tagData from 'app/tag-data.json'
+import { slug } from 'github-slugger'
 
 const MAX_DISPLAY = 5
 
 export default function Home({ posts }) {
+  const tagCounts = tagData as Record<string, number>
+  const tagKeys = Object.keys(tagCounts)
+  const sortedTags = tagKeys.sort((a, b) => tagCounts[b] - tagCounts[a])
   return (
     <>
-      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="">
         <div className="space-y-2 pt-6 pb-8 md:space-y-5">
           <h1 className="text-3xl leading-9 font-extrabold tracking-tight text-gray-900 sm:text-4xl sm:leading-10 md:text-6xl md:leading-14 dark:text-gray-100">
             Hello, 欢迎来到 White-Meta
@@ -17,63 +21,50 @@ export default function Home({ posts }) {
             {siteMetadata.description}
           </p>
         </div>
-        <ul className="divide-y divide-gray-200 dark:divide-gray-700 w-full">
-          {!posts.length && 'No posts found.'}
-          {posts.slice(0, MAX_DISPLAY).map((post) => {
-            const { slug, date, title, summary, tags } = post
+        <div className="text-3xl text-gray-500 dark:text-gray-400 border-0">
+          <p>首先感谢你来到这里</p>
+          <p className="mt-12">
+            右上角的
+            <a className="text-blue-500" href="/about">
+              「关于」
+            </a>
+            里面有我的基本介绍
+          </p>
+          <p>
+            同时，我在尝试做一名
+            <a
+              className="text-blue-500"
+              href="https://space.bilibili.com/107889531"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              「B站UP主」
+            </a>
+            ，希望点点关注
+          </p>
+          <p className="mt-12">
+            我不想把大量文章塞进你的窗口里
+            <br />
+            所以，下面有一些基本的分类，你可以点击查看
+          </p>
+        </div>
+        <div className="flex-col max-w-lg flex-wrap">
+          {sortedTags.map((t) => {
             return (
-              <li key={slug} className="py-12">
-                <article>
-                  <div className="space-y-2 xl:grid xl:grid-cols-4 xl:items-baseline xl:space-y-0">
-                    <div className="space-y-5 xl:col-span-3">
-                      <div className="space-y-6">
-                        <div>
-                          <h2 className="text-2xl leading-8 font-bold tracking-tight">
-                            <Link
-                              href={`/blog/${slug}`}
-                              className="text-gray-900 dark:text-gray-100"
-                            >
-                              {title}
-                            </Link>
-                          </h2>
-                          <div className="flex flex-wrap">
-                            {tags.map((tag) => (
-                              <Tag key={tag} text={tag} />
-                            ))}
-                          </div>
-                        </div>
-                        <div className="prose max-w-none text-gray-500 dark:text-gray-400">
-                          {summary}
-                        </div>
-                      </div>
-                      <div className="text-base leading-6 font-medium">
-                        <Link
-                          href={`/blog/${slug}`}
-                          className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
-                          aria-label={`Read more: "${title}"`}
-                        >
-                          Read more &rarr;
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              </li>
+              <div key={t} className="mt-2 mr-5 mb-2">
+                <Tag text={t} size="lg" />
+                <Link
+                  href={`/tags/${slug(t)}`}
+                  className="-ml-2 text-sm font-semibold text-gray-600 uppercase dark:text-gray-300"
+                  aria-label={`View posts tagged ${t}`}
+                >
+                  {` (${tagCounts[t]})`}
+                </Link>
+              </div>
             )
           })}
-        </ul>
-      </div>
-      {posts.length > MAX_DISPLAY && (
-        <div className="flex justify-end text-base leading-6 font-medium">
-          <Link
-            href="/blog"
-            className="text-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
-            aria-label="All posts"
-          >
-            All Posts &rarr;
-          </Link>
         </div>
-      )}
+      </div>
     </>
   )
 }

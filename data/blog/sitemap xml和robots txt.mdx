@@ -1,17 +1,17 @@
 ---
 title: sitemap.xml和robots.txt
-tags: ['seo', '技术']
+tags: ['seo']
 draft: false
-summary: 介绍一下sitemap.xml和robots.txt，并一起看看b站是怎么配置的
+summary: 介绍sitemap.xml和robots.txt，并一起看看b站是怎么配置的
 ---
-
-# sitemap.xml和robots.txt
 
 这期是一个简单的技术分享，聊一聊标题里的这两个东西，不管你是前端还是后端面试的时候可能都会或多或少涉及到seo的问题，因为毕竟是要搞网站嘛，seo是躲不掉的。
 
 这是两个纯文本文件，面试的时候一问就可以看出来这个候选人是不是真的深入接触过c端项目的研发，看出他对seo的了解程度。
 
 ![image.png](https://phzdoc.oss-cn-beijing.aliyuncs.com/uPic/sitemaprobots.png)
+
+## 什么是sitemap.xml和robots.txt
 
 这俩是啥呢，简单的说就是每个网站几乎必备的两个说明文档。
 
@@ -38,6 +38,8 @@ summary: 介绍一下sitemap.xml和robots.txt，并一起看看b站是怎么配�
 还有一种情况，就是你的网站规模特别大，比如b站有舞蹈区，有美食区，动画区，每个区都有很多视频，你不希望爬虫漫无目的的来回爬，你希望提供个内容大纲，告诉爬虫网站是怎么分类的，以提高爬虫的爬取效率。
 
 再有比如你想说明哪些内容是每小时都更新的，欢迎爬虫每小时都来看看，哪些内容是常年不动的，爬虫你来这一次就够了，别给我增加服务器的负担。以及还有一些孤岛页面，所谓孤岛页面就是这个页面爬虫无法通过任何链接点击跳转过去，就像被隐藏起来了。那爬虫正常情况下是不知道这个页面存在的，总之你可能需要提供一个说明文档，向爬虫具体介绍你网站各个页面的情况。
+
+## 看看B站的配置
 
 robots.txt和sitemap.xml就是上文的说明文档，我们可以用b站作为例子，点开看看里面是怎么描述的。
 
@@ -87,7 +89,7 @@ Disallow: /
 
 你可能禁止了一切，但爬虫还是不管不顾的来。你可能允许访问一切，但谷歌没收录你的域名，还是不会被爬取。
 
-参考：
+## 参考
 
 [https://search.google.com/search-console/](https://search.google.com/search-console/)
 
