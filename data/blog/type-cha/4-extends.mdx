@@ -1,5 +1,5 @@
 ---
-title: 类型体操入门 —— 深入理解extends
+title: 类型体操入门 —— extends的三种用法
 tags: ['TypeScript类型体操']
 draft: false
 summary: 类型系统中的extends
@@ -7,9 +7,21 @@ summary: 类型系统中的extends
 
 ## 前置知识
 
-今天我想和你分享extends关键字在ts类型系统中的两个用法。
+extends关键字在ts类型系统中主要有三个作用
 
-其一，和很多面向对象编程语言的extends相同，我们用它来继承父类。
+其一，他可以用来给泛型做限制。
+
+比如有一个比较函数，希望比较两个参数的length值哪个大。
+
+```ts
+function compare<T extends { length: number }>(a: T, b: T) {
+  return a.length > b.length ? a : b
+}
+```
+
+通过让T继承 `{length:number}`，我们就限制了T的类型必须包含length属性，这样函数内部就可以大胆的访问length属性了。
+
+其二，和很多面向对象编程语言的extends相同，我们用它来继承父类。这个不多说了，大家都会。
 
 ```ts
 class Animal {
@@ -20,11 +32,11 @@ class Animal {
 
 class Dog extends Animal {}
 
-const d = new Dog()
-d.eat('meet')
+const dahuang = new Dog()
+dahuang.eat('meet')
 ```
 
-其二，就是在类型系统中用来做逻辑判断，类似三元运算符。
+其三，就是在类型系统中用来做逻辑判断，类似三元运算符。
 
 ```ts
 a === b ? a : b
@@ -37,10 +49,10 @@ type a extends type b ? a : b
 ```ts
 // 还是用上面狗狗做例子
 
-type R = typeof d extends Animal ? true : false //true
+type R = typeof dahuang extends Animal ? true : false //true
 ```
 
-如果是联合类型参与了extends的三元运算，那么类型系统会把每一项都计算一遍，最终把结果联合到一起。
+值得注意的事，如果是联合类型参与了extends的三元运算，那么类型系统会把每一项都计算一遍，最终把结果联合到一起。
 
 ```ts
 type Cond<T> = T extends U ? X : Y
