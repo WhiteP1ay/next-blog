@@ -21,19 +21,19 @@ TypeScript 既是一门独立的编程语言，也是一套强大的类型扩展
 
 先说一下什么是类型体操。
 
-因为Typescript的类型系统通常认为是图灵完备的，所以有些高级玩家喜欢做一些类型系统的挑战——只用类型系统来完成一些复杂功能。比如项目[hyperscript](https://github.com/ronami/HypeScript)，就是仅用类型系统完成了一个简易版本的Typescript类型系统。
+因为 TypeScript 的类型系统通常认为是图灵完备的，所以有些高级玩家喜欢做一些类型系统的挑战——只用类型系统来完成一些复杂功能。比如项目 [HypeScript](https://github.com/ronami/HypeScript)，就是仅用类型系统完成了一个简易版本的 TypeScript 类型系统。
 
-不过，这些复杂的类型操作在编译成 JavaScript 后会被无情地抛弃，所以它们基本属于“代码界的艺术体操”——炫技、优雅，但没啥实际用处。
+不过，这些复杂的类型操作在编译成 JavaScript 后会被无情地抛弃，所以它们基本属于"代码界的艺术体操"——炫技、优雅，但没啥实际用处。
 
 如果没啥实际用处，那我们为什么要学习类型体操？
 
-我觉得这个过程就像打游戏，地狱难度你都cover住了，平常工作中那些easy难度的小挑战自然不在话下。
+我觉得这个过程就像打游戏，地狱难度你都 cover 住了，平常工作中那些 easy 难度的小挑战自然不在话下。
 
-[type-challges](https://github.com/type-challenges/type-challenges)是github上一个很火爆的项目，里面收集了一系列类型体操，并按难度划分，只要鼠标点点，就可以在网页里挑战这些难题。
+[type-challenges](https://github.com/type-challenges/type-challenges) 是 GitHub 上一个很火爆的项目，里面收集了一系列类型体操，并按难度划分，只要鼠标点点，就可以在网页里挑战这些难题。
 
 ## Hello World
 
-接下来我们看一下第一题，热身难度的Hello World。
+接下来我们看一下第一题，热身难度的 Hello World。
 
 ```typescript
 type HelloWorld = any
@@ -42,23 +42,23 @@ type HelloWorld = any
 type test = Expect<Equal<HelloWorld, string>>
 ```
 
-题目要求希望类型HelloWorld等同于string。那请问我这么写可以吗？
+题目要求希望类型 `HelloWorld` 等同于 `string`。那请问我这么写可以吗？
 
 ```typescript
 type HelloWorld = ''
 ```
 
-不可以，因为这样HelloWord的类型不会被推导成为字符串，而是被推到为值为空字符串的值类型。没错，单个数值也是一种类型。
+不可以，因为这样 `HelloWorld` 的类型不会被推导成为字符串，而是被推导为值为空字符串的值类型。没错，单个数值也是一种类型。
 
-所以正确方法如下。
+所以正确方法如下：
 
 ```ts
 type HelloWorld = string
 ```
 
-但这很奇怪不是吗，string作为一种独立存在的类型可以被“赋值”给另一个类型。
+但这很奇怪不是吗，`string` 作为一种独立存在的类型可以被"赋值"给另一个类型。
 
-这是因为type命令存在的意义就是**类型别名**，也正是因为存在的意义是别名，所以不可以重名。
+这是因为 `type` 命令存在的意义就是**类型别名**，也正是因为存在的意义是别名，所以不可以重名。
 
 ```ts
 type HelloWorld = string
@@ -66,9 +66,9 @@ type HelloWorld = string
 type HelloWorld = number
 ```
 
-那如果不可以重名，也就意味着有“类型命名作用域”。也就是说，不能重名的限制需要明确在一个指定范围。否则type命令将导致整个项目存在潜在的命名冲突。
+那如果不可以重名，也就意味着有"类型命名作用域"。也就是说，不能重名的限制需要明确在一个指定范围。否则 `type` 命令将导致整个项目存在潜在的命名冲突。
 
-那让我们尝试一下一下代码。
+那让我们尝试一下以下代码：
 
 ```ts
 type HelloWorld = string
@@ -77,12 +77,12 @@ type HelloWorld = string
 }
 ```
 
-不会再报错了，由此得知，别名的作用域是块级作用域。这样我们通过一道简单的类型体操热身，对ts有了更深入的了解。
+不会再报错了，由此得知，别名的作用域是块级作用域。这样我们通过一道简单的类型体操热身，对 TS 有了更深入的了解。
 
-**推荐阅读**
+## 推荐阅读
 
-- 阮一峰 [Typescript教程](https://wangdoc.com/typescript/) 弥补了ts官方文档缺少中文翻译的不足，是ts入门的好资料。
+- 阮一峰 [TypeScript 教程](https://wangdoc.com/typescript/) 弥补了 TS 官方文档缺少中文翻译的不足，是 TS 入门的好资料。
 
-- 我的视频讲解 [TypeScript类型体操入门](https://www.bilibili.com/video/BV1BhEtz6E3s) 视频讲解更直观详细，相比于文章更适合初学者。
+- 我的视频讲解 [TypeScript 类型体操入门](https://www.bilibili.com/video/BV1BhEtz6E3s) 视频讲解更直观详细，相比于文章更适合初学者。
 
-- 我个人博客网站 [TypeScript类型体操入门-前言&第一题](https://whitemeta.cn/blog/type-cha/1-intro)
+- 我个人博客网站 [TypeScript 类型体操入门-前言&第一题](https://whitemeta.cn/blog/type-cha/1-intro)
