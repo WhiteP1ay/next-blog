@@ -1,8 +1,8 @@
 ---
-title: 解决fetch的困境 —— react-query 【1】简介与快速入门
+title: 解决 fetch 的困境 —— React Query 【1】简介与快速入门
 tags: ['react-query']
 draft: false
-summary: 本文介绍我们请求网络数据时面临哪些困境，以及为什么我们需要react-query
+summary: 本文介绍我们请求网络数据时面临哪些困境，以及为什么我们需要 React Query
 ---
 
 ![玳瑁猫](https://phzdoc.oss-cn-beijing.aliyuncs.com/uPic/cat1.png)
@@ -13,11 +13,11 @@ summary: 本文介绍我们请求网络数据时面临哪些困境，以及为�
 
 嘿，我是老白。
 
-在开始前，我想讨论一下标题中说的fetch困境是什么？
+在开始前，我想讨论一下标题中说的 fetch 困境是什么？
 
 ### 过于简朴的 fetch
 
-在使用原生的 `fetch api` 获取数据时，大家通常会这么写。
+在使用原生的 `fetch API` 获取数据时，大家通常会这么写：
 
 ```tsx
 useEffect(() => {
@@ -29,13 +29,13 @@ useEffect(() => {
 }, [])
 ```
 
-很简洁，但这种写法只能在demo里使用。
+很简洁，但这种写法只能在 demo 里使用。
 
 在生产环境中这么写是不能接受的。因为你对这个请求没有做任何处理，它的成功与否被完全的放任自由了。换句话说，这个页面能否正常工作也被放任自由了。
 
 一旦 loading 时间过长却没有任何反馈、或者请求出错了但前端没有任何响应，对用户体验来说都是致命打击。
 
-那让我们优化一下吧！添加loading和错误处理逻辑，这个代码将变成这样：
+那让我们优化一下吧！添加 loading 和错误处理逻辑，这个代码将变成这样：
 
 ```tsx
 // 一个简单的获取学生列表的组件
@@ -93,7 +93,7 @@ const StudentList = () => {
 
 我们只是为了处理一个网络请求的衍生逻辑，但代码已经开始变得复杂化，模板化了。
 
-isLoading，error，这些衍生状态都需要我们手动管理，每个请求都这么写显然很麻烦。
+`isLoading`、`error`，这些衍生状态都需要我们手动管理，每个请求都这么写显然很麻烦。
 
 ### 竞态问题
 
@@ -105,9 +105,9 @@ isLoading，error，这些衍生状态都需要我们手动管理，每个请求
 
 2. 一个自动完成组件，用户输入一部分内容，组件会立即访问远程服务器获取智能补全的提示词。但因为用户输入变更很快，最终显示的提示词可能被延期返回的请求结果覆盖。
 
-这就是我们要解决的[“race condition—竞态问题”](https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect)。
+这就是我们要解决的["race condition—竞态问题"](https://maxrozen.com/race-conditions-fetching-data-react-with-useeffect)。
 
-一个简单的处理竞态问题的思路：通过闭包的`active`来让旧的请求在组件重渲染时不再执行后续逻辑。
+一个简单的处理竞态问题的思路：通过闭包的 `active` 来让旧的请求在组件重渲染时不再执行后续逻辑。
 
 ```tsx
 useEffect(() => {
@@ -130,25 +130,25 @@ useEffect(() => {
 }, [props.id])
 ```
 
-每次发起请求都有一个新的`active`被创建，只有当`active`为`true`才会执行网络请求的后续操作。
+每次发起请求都有一个新的 `active` 被创建，只有当 `active` 为 `true` 才会执行网络请求的后续操作。
 
-当组件重新渲染或者说页面状态过期的时候 active 变成 false，这个`false`作为网络请求的闭包被缓存到了回调函数中，从而阻止了过期的后续操作。
+当组件重新渲染或者说页面状态过期的时候 `active` 变成 `false`，这个 `false` 作为网络请求的闭包被缓存到了回调函数中，从而阻止了过期的后续操作。
 
 ### something else
 
-[react官方文档](https://zh-hans.react.dev/learn/synchronizing-with-effects#what-are-good-alternatives-to-data-fetching-in-effects)也列举了一些直接在`useEffect`中发起网络请求的缺点与替代方案。并推荐了我想向大家介绍的`react-query`。
+[React 官方文档](https://zh-hans.react.dev/learn/synchronizing-with-effects#what-are-good-alternatives-to-data-fetching-in-effects) 也列举了一些直接在 `useEffect` 中发起网络请求的缺点与替代方案。并推荐了我想向大家介绍的 React Query。
 
 ## 介绍
 
-`@tanstack/query` （曾用名 `react-query`，下文简称 query）是一个异步状态管理工具。
+`@tanstack/query`（曾用名 `react-query`，下文简称 query）是一个异步状态管理工具。
 
-它支持 react/vue/angular 等主流前端框架。我自己在公司的项目中有深度使用过 react 和 vue 的版本，体验都还不错。
+它支持 React/Vue/Angular 等主流前端框架。我自己在公司的项目中有深度使用过 React 和 Vue 的版本，体验都还不错。
 
 异步状态管理工具，简单地说，就是管理基于异步操作而获得的状态。通常是管理网络请求返回的数据以及衍生状态。这个后续会详细介绍。
 
 先看一下这个库的成绩：
 
-> [github](https://github.com/TanStack/query) 42.7k ⭐️，npm[周下载量](https://www.npmjs.com/package/@tanstack/react-query) 4422006。
+> [GitHub](https://github.com/TanStack/query) 42.7k ⭐️，NPM [周下载量](https://www.npmjs.com/package/@tanstack/react-query) 4422006。
 
 这个数据看起来非常夸张，实际上也确实如此，query 在国外是非常主流的技术选择。
 
@@ -156,20 +156,20 @@ query 在国内似乎比较冷门，也缺少完善的中文翻译。这也是�
 
 ## query 基础使用
 
-这节讲一下query 的基础使用，发起一个网络请求很简单，只需要调用`useQuery`，该函数需要两个参数：`queryKey`和`queryFn`。
+这节讲一下 query 的基础使用，发起一个网络请求很简单，只需要调用 `useQuery`，该函数需要两个参数：`queryKey` 和 `queryFn`。
 
 ```tsx
 useQuery({
   queryKey: any[],
-  queryFn: ()=>Promise
+  queryFn: () => Promise
 })
 ```
 
 ### 关于 queryFn
 
-`queryFn` 总是返回一个 Promise，因为 query 并不在乎`queryFn`中是否有一个真实的网络请求，query 只在乎 Promise 的状态。
+`queryFn` 总是返回一个 Promise，因为 query 并不在乎 `queryFn` 中是否有一个真实的网络请求，query 只在乎 Promise 的状态。
 
-如果用浏览器的`fetch` Api 来编写网络请求，`queryFn`看起来是这样的。
+如果用浏览器的 `fetch API` 来编写网络请求，`queryFn` 看起来是这样的：
 
 ```tsx
 queryFn: async () => {
@@ -181,20 +181,20 @@ queryFn: async () => {
 }
 ```
 
-不需要在这里嵌套`try-catch`，直接 throw Error 是为了让 query 知道发生了错误。
+不需要在这里嵌套 `try-catch`，直接 throw Error 是为了让 query 知道发生了错误。
 
-query 的定位是异步状态管理工具，和`pinia/jotai`这种同步状态管理库、还有`axios`这种网络请求库是完全不冲突的，因为定位不一样。
+query 的定位是异步状态管理工具，和 `pinia/jotai` 这种同步状态管理库、还有 `axios` 这种网络请求库是完全不冲突的，因为定位不一样。
 
-所以正式项目推荐把基于`axios`发起的网络请求作为`queryFn`。
+所以正式项目推荐把基于 `axios` 发起的网络请求作为 `queryFn`。
 
 ### 关于 queryKey
 
-`queryKey`是一个数组，通常首位是对状态的简要描述。比如如果获取学生列表就可以是`['student']`。如果获取学生详情就可以是`['student',id]`。
+`queryKey` 是一个数组，通常首位是对状态的简要描述。比如如果获取学生列表就可以是 `['student']`。如果获取学生详情就可以是 `['student', id]`。
 
-请求相关的参数也应该放到`queryKey`列表中，每当`queryKey`变更就会重新执行查询函数，并把查询结果缓存起来。
+请求相关的参数也应该放到 `queryKey` 列表中，每当 `queryKey` 变更就会重新执行查询函数，并把查询结果缓存起来。
 
 ```ts
-// id/排序/页码/每页条数/排序 等等都应该放到query-key中
+// id/排序/页码/每页条数/排序 等等都应该放到 query-key 中
 useQuery({ queryKey: ['todo', sort], ... })
 ```
 
