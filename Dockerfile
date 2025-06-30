@@ -5,10 +5,13 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 
 RUN corepack enable
-RUN yarn install
+RUN yarn install --frozen-lockfile
 
 COPY . .
 
+RUN rm -rf .next .contentlayer
 RUN yarn build
+
+EXPOSE 3000
 
 CMD ["yarn", "serve"]
