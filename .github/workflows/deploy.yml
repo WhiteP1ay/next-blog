@@ -30,7 +30,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/next-blog:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/next-blog:${{ github.sha }}
-          no-cache: true
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/next-blog:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/next-blog:buildcache,mode=max
 
@@ -41,16 +40,50 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            # 1. 拉取最新镜像
+            echo "=== 开始部署流程 ==="
+            
+            # 1. 清理Docker资源（避免磁盘空间不足）
+            echo "清理Docker资源..."
+            docker system prune -f || true
+            docker image prune -f || true
+            
+            # 2. 删除旧的next-blog相关镜像（释放空间）
+            echo "删除旧镜像..."
+            docker images | grep next-blog | awk '{print $3}' | xargs -r docker rmi -f || true
+            
+            # 3. 拉取最新镜像
+            echo "拉取最新镜像..."
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/next-blog:latest
             
-            # 2. 停止并删除旧容器
+            # 4. 停止并删除旧容器（避免容器名称冲突）
+            echo "停止并删除旧容器..."
+            docker stop next-blog || true
             docker rm -f next-blog || true
             
-            # 3. 启动新容器
+            # 5. 启动新容器
+            echo "启动新容器..."
             docker run -d \
               --name next-blog \
               --network my-nginx \
               --restart always \
               -p 3000:3000 \
               ${{ secrets.DOCKERHUB_USERNAME }}/next-blog:latest
+            
+            # 6. 验证部署
+            echo "验证部署..."
+            sleep 10
+            if docker ps | grep -q next-blog; then
+              echo "✅ 容器启动成功"
+              echo "容器状态:"
+              docker ps | grep next-blog
+            else
+              echo "❌ 容器启动失败"
+              docker logs next-blog || true
+              exit 1
+            fi
+            
+            # 7. 清理构建缓存（可选，节省空间）
+            echo "清理构建缓存..."
+            docker builder prune -f || true
+            
+            echo "=== 部署完成 ==="

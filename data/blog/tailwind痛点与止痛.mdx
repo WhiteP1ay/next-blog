@@ -1,0 +1,147 @@
+---
+title: Tailwind CSS痛点与止痛之法
+tags: ['技术杂谈']
+draft: false
+summary: 深入探讨TailwindCSS在实际开发中遇到的常见痛点，包括无法直接操作DOM节点、可读性差、调试困难以及样式不生效等问题，并提供相应的解决方案和最佳实践。
+---
+
+## 拿不到DOM节点
+
+Tailwind的爽点是可以在DOM上直接写CSS，不用频繁切换上下文，不用考虑选择器，几乎是所见即所得的给DOM节点编辑样式。
+
+但有时候我们拿不到DOM节点，那又该怎么给节点设置样式呢？
+
+所谓拿不到节点是什么意思呢？可能你引入了第三方组件，组件内部包含了几十个DOM节点，但对你来说他们都封装到了一起，此时你要如何用Tailwind来对某个内部节点做样式自定义？
+
+这里分享几个解决方法：
+
+### 1. 使用传统CSS文件
+
+首先TailwindCSS并不和常规CSS相冲突。你依旧可以创建一个.css文件来处理Tailwind难以处理的场景。当然这个方法是最不推荐的方法，只有在特别难处理的情境下有必要。通常来说，当你们决定用Tailwind，那项目里除了全局reset就不该再出现.css文件了。
+
+### 2. 选择适配友好的组件库
+
+如果第三方组件让你无所适从，那推荐选型一些对Tailwind适配友好的组件库。比如shadcn，它会把源码生成在项目源码中，既然源码就在手边，那自定义起来就容易很多。其次老牌的MUI，支持多种样式自定义方式。简单的说该组件库把各个组件拆分成多个基础组成部分，并允许用户对这些基础组成部分做类似插槽的DOM替换以及重新命名className。
+
+### 3. 使用Tailwind选择器
+
+Tailwind提供了一些选择器来提高自由度。具体看这里，当然大规模的应用这种选择器不是好的方式，有点黑魔法的味道了。https://tailwindcss.com/docs/hover-focus-and-other-states#child-selectors 这里我们可以看shadcn表格组件为例。他为了统一表头下每个DOM的样式，就是基于后代选择器`[&_tr]:`来实现。
+
+```tsx
+function TableHeader({ className, ...props }: React.ComponentProps<'thead'>) {
+  return (
+    <thead
+      data-slot="table-header"
+      className={cn('[&_tr]:border-b bg-primary', className)}
+      {...props}
+    />
+  )
+}
+
+function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
+  return (
+    <tbody
+      data-slot="table-body"
+      className={cn('[&_tr:last-child]:border-0', className)}
+      {...props}
+    />
+  )
+}
+```
+
+## 可读性差
+
+Tailwind把样式写进DOM之间，一方面提高样式可读性，但另一方面如果你只想查看DOM结构的话，成串的className多少影响可读性了。那怎么提升可读性呢？
+
+### 1. cn函数
+
+即[classnames](https://www.npmjs.com/package/classnames)，我最推荐的解决方法。本质上和Vue的样式绑定是一回事。当逻辑为true则该className生效。我们可以基于它形成约定，让className按类型整理起来。比如布局相关的，像flex justify-center align-center写在一起。长宽高这种盒模型的写在一起，字体相关的写在一起。等等，总之通过分类让过长的字符串有规则的聚合在一起，一定程度可以提高可读性。
+
+```tsx
+import cn from 'classnames'
+
+const MyComponent = () => {
+  return (
+    <div
+      className={cn(
+        'flex justify-center align-center',
+        'font-mono font-light text-blue-500',
+        'py-3 px-2 mt-3'
+      )}
+    />
+  )
+}
+```
+
+### 2. UnoCSS
+
+每次都要调用函数，并传入多个字符串固然很不爽。所以我推荐UnoCSS，能提高编写TailwindCSS的体验。让我们一起看下文档。
+
+![image.png](https://phzdoc.oss-cn-beijing.aliyuncs.com/uPic/uno1.png)
+
+![image.png](https://phzdoc.oss-cn-beijing.aliyuncs.com/uPic/uno2.png)
+
+### 3. 使用编辑器插件
+
+在VSCode中使用inline fold或tailwind fold插件。这类插件默认情况下会把className折叠起来，让你眼不见心不烦。但我个人觉得这个插件更适合review其他人的代码，如果每天有大量代码要写的话这个插件多少有点碍事了。
+
+### 4. 善用@apply
+
+如果这个项目前端主要是你一个人在写，你可以通过@apply来适当封装一些。比如定义一个flex-center，或base-button。但尽量少用，如果项目里全是@apply指令，那不如写回原生CSS或SCSS了。
+
+## 调试困难
+
+相比于调试原子化CSS，我们更喜欢调试传统CSS，因为传统CSS把相关样式归类、聚合到一起，相关定义一目了然。那有没有方法让TailwindCSS获得类似传统CSS的调试体验？有的。
+
+### 使用浏览器插件
+
+这个浏览器插件就是为了解决这个问题。https://github.com/astahmer/atomic-css-devtools
+
+它添加了一个新的tab页，在这里相关定义一目了然。
+
+### 使用语义化className
+
+另一个建议，并不是所有className都要符合Tailwind的定义，你仍然可以写一些语义化的className，尽管没有相对应的样式，但它可以帮你快速定位到DOM节点，提高调试的效率。
+
+## 样式不生效
+
+又一个老生常谈的问题。CSS样式生效涉及到一些复杂的权重。具体你可以看[这篇文章](https://developer.mozilla.org/zh-CN/docs/Web/CSS/CSS_cascade/Specificity)。原子CSS一定程度上简化了权重。你可以通过配置文件让你的TailwindCSS全都是最高权重，比如全都加root元素作为前缀。当然这需要额外注意一些用了portal的组件可能样式失效，因为默认情况下它们不是root根元素的子集。
+
+### 动态className问题
+
+另一个值得注意的是，Tailwind CSS的编译原理是通过正则表达式（或其他模式匹配方法）扫描项目源码文件，来找出哪些是可能的className，然后再编译成具体的CSS代码。所以像下文这种className写法是不会生效的。
+
+```tsx
+<div className={`bg-red-[${isDark ? 600 : 200}]`} />
+```
+
+解决方法是写成这样：
+
+```tsx
+<div className={isDark ? 'bg-red-600' : 'bg-red-200'} />
+```
+
+这两个都是可以被扫描到的className，可以正确编译。
+
+### 样式冲突问题
+
+还有一种样式不生效的情况，那就是可能className冲突。下面这种代码是很常见的，让我们的组件一定程度上支持样式自定义。
+
+```tsx
+<div className={'some class name text-red' + externalClassName} />
+```
+
+那我们假设一下，如果传入了text-blue，那字体颜色应该是蓝色还是红色？其实是不确定的。它不像行内样式后面样式会覆盖前面的，而是统一编译到CSS文件里，具体优先级取决于构建工具的处理逻辑和Tailwind的CSS生成顺序。
+
+如果你用过shadcn你就知道怎么解决了：
+
+```tsx
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+```
+
+核心就是对twMerge这个库的调用。它会在样式冲突时保证后来者居上。如果你们自己开发的组件库使用了Tailwind，那这个cn函数是一定要广泛使用的。
